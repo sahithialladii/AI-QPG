@@ -9,12 +9,45 @@
 <body>
     <h1>Question Paper Generator</h1>
 
+
+    <h3>Students Above or Equal to Threshold</h3>
+    <table>
+        <tr><th>Name</th><th>Marks</th></tr>
+        {% for student in group_A %}
+        <tr>
+            <td>{{ student.Name }}</td>
+            <td>{{ student.Marks }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Students Below Threshold</h3>
+    <table>
+        <tr><th>Name</th><th>Marks</th></tr>
+        {% for student in group_B %}
+        <tr>
+            <td>{{ student.Name }}</td>
+            <td>{{ student.Marks }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+
     <!-- Form to input the topic and number of questions -->
     <form id="questionForm">
         <label for="topic">Topic:</label>
         <input type="text" id="topic" required>
+
         <label for="num_questions">Number of Questions:</label>
         <input type="number" id="num_questions" value="5" required>
+
+        <label for="difficulty">Difficulty:</label>
+    <select id="difficulty" required>
+        <option value="" disabled selected>Select difficulty</option>
+        <option value="Easy">Easy</option>
+        <option value="Hard">Hard</option>
+    </select>
+
         <button type="submit">Generate Questions</button>
     </form>
 
@@ -32,6 +65,7 @@
             
             const topic = document.getElementById('topic').value;
             const numQuestions = document.getElementById('num_questions').value;
+            const difficulty = document.getElementById('difficulty').value;
 
             // Send POST request to the Flask backend to generate questions
             const response = await fetch('/generate_questions', {
@@ -39,7 +73,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ topic, num_questions: numQuestions })  // Send data as JSON
+                body: JSON.stringify({ topic, num_questions: numQuestions,difficulty })  // Send data as JSON
             });
 
             const data = await response.json();

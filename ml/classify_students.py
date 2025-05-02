@@ -44,20 +44,20 @@ def classify_students(marksheet_path, threshold):
     # Return the two groups
     return group_A, group_B
 
-# Example Usage:
-marksheet_path = 'marksheet.pdf'  # Replace with your PDF path
-threshold = float(input("Enter the threshold marks: "))
+# # Example Usage:
+# marksheet_path = 'marksheet.pdf'  # Replace with your PDF path
+# threshold = float(input("Enter the threshold marks: "))
 
-group_A, group_B = classify_students(marksheet_path, threshold)
+# group_A, group_B = classify_students(marksheet_path, threshold)
 
-print("\n=== Students Above or Equal to Threshold ===")
-print(group_A[['Name', 'Marks']])
+# print("\n=== Students Above or Equal to Threshold ===")
+# print(group_A[['Name', 'Marks']])
 
-print("\n=== Students Below Threshold ===")
-print(group_B[['Name', 'Marks']])
+# print("\n=== Students Below Threshold ===")
+# print(group_B[['Name', 'Marks']])
 
 # Optionally save them as CSVs
-group_A.to_csv('students_above_threshold.csv', index=False)
-group_B.to_csv('students_below_threshold.csv', index=False)
+# group_A.to_csv('students_above_threshold.csv', index=False)
+# group_B.to_csv('students_below_threshold.csv', index=False)
 
-print("\nSeparate marksheets saved successfully!")
+# print("\nSeparate marksheets saved successfully!")
