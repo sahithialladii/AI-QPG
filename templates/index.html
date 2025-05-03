@@ -5,12 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
     <title>Question Paper Generator</title>
+
+
+    <style>
+        .tables-container {
+    display: flex;
+    justify-content: space-around;
+    gap: 40px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.table-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+    </style>
+
 </head>
 <body>
     <h1>Question Paper Generator</h1>
 
-
-    <h3>Students Above or Equal to Threshold</h3>
+<div class="tables-container">
+    <div class="table-section">
+        <h3>Students Above or Equal to Threshold</h3>
     <table>
         <tr><th>Name</th><th>Marks</th></tr>
         {% for student in group_A %}
@@ -20,7 +50,9 @@
         </tr>
         {% endfor %}
     </table>
+    </div>
 
+<div class="table-section">
     <h3>Students Below Threshold</h3>
     <table>
         <tr><th>Name</th><th>Marks</th></tr>
@@ -31,6 +63,8 @@
         </tr>
         {% endfor %}
     </table>
+</div>
+</div>
 
 
     <!-- Form to input the topic and number of questions -->
