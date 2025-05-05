@@ -135,6 +135,65 @@ def upload_marksheet():
 
 
 
+@app.route('/previous_papers')
+def previous_papers():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT id, title FROM question_papers WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+    papers = cursor.fetchall()
+
+    return render_template('previous_papers.html', papers=papers)
+
+
+# @app.route('/download_paper/<int:paper_id>')
+# def download_paper(paper_id):
+#     if 'user_id' not in session:
+#         return redirect(url_for('login'))
+
+#     user_id = session['user_id']
+#     cursor = db.cursor(dictionary=True)
+#     cursor.execute("SELECT file_path FROM question_papers WHERE id = %s AND user_id = %s", (paper_id, user_id))
+#     paper = cursor.fetchone()
+
+#     if paper:
+#         return send_file(paper['file_path'], as_attachment=True)
+#     else:
+#         return "Paper not found or access denied", 404
+
+
+
+
+
+
+
+
+
+
+
+from flask import send_file, Response
+
+@app.route('/download_paper/<int:paper_id>')
+def download_paper(paper_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT file_path FROM question_papers WHERE id = %s AND user_id = %s", (paper_id, session['user_id']))
+    paper = cursor.fetchone()
+
+    if not paper:
+        return "File not found or unauthorized", 404
+
+    return send_file(
+        paper['file_path'],
+        mimetype='application/pdf',
+        as_attachment=False,  # <-- Important: Set to False to preview
+        download_name='preview.pdf'  # Optional: browser-friendly name
+    )
+
 
 
 
@@ -242,35 +301,98 @@ def generate_questions():
 
     return jsonify({"questions": questions})
 
- # Route to generate the PDF
+#  # Route to generate the PDF
+# @app.route('/generate_pdf', methods=['POST'])
+# def generate_pdf():
+#     data = request.get_json()
+#     topic = data.get('topic')
+#     questions = data.get('questions', [])
+
+#     # Render the HTML template for the PDF
+#     rendered_html = render_template(
+#         'pdf_template.html',  # This is the template for the PDF
+#         topic=topic,
+#         questions=questions,
+#         enumerate=enumerate  # Allows numbering in the template
+#     )
+
+#     # Create the PDF
+#     pdf = BytesIO()
+#     pisa_status = pisa.CreatePDF(BytesIO(rendered_html.encode('utf-8')), dest=pdf)
+
+#     if pisa_status.err:
+#         return jsonify({"error": "Error generating PDF"}), 500
+
+#     # Send the PDF as a response
+#     response = make_response(pdf.getvalue())
+#     response.headers['Content-Type'] = 'application/pdf'
+#     response.headers['Content-Disposition'] = f'attachment; filename={topic}_questions.pdf'
+    
+#     return response
+
+
+
+
+
 @app.route('/generate_pdf', methods=['POST'])
 def generate_pdf():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
     data = request.get_json()
     topic = data.get('topic')
     questions = data.get('questions', [])
 
     # Render the HTML template for the PDF
     rendered_html = render_template(
-        'pdf_template.html',  # This is the template for the PDF
+        'pdf_template.html',
         topic=topic,
         questions=questions,
-        enumerate=enumerate  # Allows numbering in the template
+        enumerate=enumerate
     )
 
-    # Create the PDF
+    # Create the PDF in memory
     pdf = BytesIO()
     pisa_status = pisa.CreatePDF(BytesIO(rendered_html.encode('utf-8')), dest=pdf)
 
     if pisa_status.err:
         return jsonify({"error": "Error generating PDF"}), 500
 
+    # Save the PDF to disk
+    filename = f"{topic}_questions_{session['user_id']}.pdf"
+    file_path = os.path.join("generated_papers", filename)
+    os.makedirs("generated_papers", exist_ok=True)
+    with open(file_path, "wb") as f:
+        f.write(pdf.getvalue())
+
+    # Save metadata to DB
+    try:
+        cursor = db.cursor()
+        cursor.execute(
+            "INSERT INTO question_papers (user_id, title, file_path) VALUES (%s, %s, %s)",
+            (session['user_id'], topic, file_path)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({"error": f"DB insert failed: {str(e)}"}), 500
+
     # Send the PDF as a response
     response = make_response(pdf.getvalue())
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename={topic}_questions.pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
     
     return response
 
+
+
+
+
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 
 if __name__ == '__main__':

@@ -10,5 +10,9 @@
             <li><a href="{{ url_for('download_paper', paper_id=paper.id) }}">{{ paper.title }}</a></li>
         {% endfor %}
     </ul>
+    <nav>
+        <!-- Other navigation links -->
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </nav>
 </body>
 </html>
