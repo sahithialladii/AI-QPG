@@ -12,7 +12,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    background: linear-gradient(135deg, #ff5e62, #ff5e62);
     background: url("./image1.png");
     background-size: cover;   /* Scales the image to cover the entire container */
     background-position: center;  /* Centers the image within the container */
@@ -99,7 +99,7 @@ p {
 }
 
 a {
-    color: #ffcccb;
+    color: #f08080;
     text-decoration: none;
     font-weight: bold;
 }

@@ -8,12 +8,17 @@ from werkzeug.utils import secure_filename
 from xhtml2pdf import pisa
 from io import BytesIO
 from ml.classify_students import classify_students
+import requests
 #from DB import get_user_papers
 
 
 
 # Load environment variables from .env file
 load_dotenv()
+GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+
+
+
 
 app = Flask(__name__)
 UPLOAD_FOLDER ='uploads'
@@ -46,6 +51,17 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 # Configure the Gemini API
 genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
@@ -62,6 +78,19 @@ model = genai.GenerativeModel(
     model_name="gemini-1.5-flash",
     generation_config=generation_config,
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Serve the welcome page
 @app.route('/')
@@ -81,10 +110,12 @@ def login():
 
         if user and check_password_hash(user['password'], password):
             session['user_id'] = user['id']
+            session['username']=user['username']
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid email or password.', 'danger')
+        
     
     return render_template('login.html')
 
@@ -125,7 +156,8 @@ def register():
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('dashboard.html')
+    username=session.get('username')
+    return render_template('dashboard.html',username=username)
 
 
 @app.route('/upload_marksheet')
@@ -279,27 +311,254 @@ def upload_file():
 def index():
     return render_template('index.html', group_A=[], group_B=[])
 
+# @app.route('/generate_questions', methods=['POST'])
+# def generate_questions():
+#     data = request.get_json()
+#     topic = data.get('topic')
+#     num_questions = data.get('num_questions', 5)
+#     difficulty=data.get('difficulty')
+
+#     # Create the chat session for generating questions
+#     chat_session = model.start_chat(history=[
+#         {
+#             "role": "user",
+#             "parts": [f"Generate {num_questions} {difficulty} questions about {topic}."]
+#         }
+#     ])
+
+#     response = chat_session.send_message("INSERT_INPUT_HERE")
+
+#     # Extract questions from the response
+#     questions = response.text.strip().split('\n')
+
+#     return jsonify({"questions": questions})
+
+
+
+
+
+
+
+import re
+
+def split_questions(text):
+    """
+    Splits a multi-line text into separate questions based on numbering pattern.
+    Keeps multi-line questions grouped properly.
+    Example question starts: '1. ...' or '2. ...'
+    """
+    questions = []
+    current_question_lines = []
+
+    # Regex pattern to detect question start line (e.g., '1. ', '2. ', etc.)
+    question_start_pattern = re.compile(r'^\s*\d+\.\s+')
+
+    lines = text.split('\n')
+    for line in lines:
+        if question_start_pattern.match(line):
+            # If we already collected lines for a question, save it first
+            if current_question_lines:
+                questions.append(' '.join(current_question_lines).strip())
+            current_question_lines = [line.strip()]
+        else:
+            # If not a new question start, append line to current question (multi-line question)
+            if line.strip():  # ignore empty lines
+                current_question_lines.append(line.strip())
+
+    # Add the last question collected
+    if current_question_lines:
+        questions.append(' '.join(current_question_lines).strip())
+
+    return questions
+
 @app.route('/generate_questions', methods=['POST'])
 def generate_questions():
+    import random
     data = request.get_json()
     topic = data.get('topic')
-    num_questions = data.get('num_questions', 5)
-    difficulty=data.get('difficulty')
+    num_questions = int(data.get('num_questions', 5))
+    difficulty = data.get('difficulty', 'medium')
 
-    # Create the chat session for generating questions
-    chat_session = model.start_chat(history=[
-        {
-            "role": "user",
-            "parts": [f"Generate {num_questions} {difficulty} questions about {topic}."]
+    prompt = f"Generate {num_questions} {difficulty} questions on the topic: {topic}."
+
+    combined_questions = []
+
+    # GEMINI QUESTIONS
+    try:
+        chat_session = model.start_chat()
+        gemini_response = chat_session.send_message(prompt)
+        gemini_questions = split_questions(gemini_response.text)
+        gemini_questions = [f"(Gemini) {q}" for q in gemini_questions if q]
+        combined_questions.extend(gemini_questions)
+    except Exception as e:
+        print(f"Gemini error: {e}")
+
+    # GROQ QUESTIONS
+    try:
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
         }
-    ])
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+            "stream": False
+        }
+        response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
+        groq_text = response.json()['choices'][0]['message']['content']
 
-    response = chat_session.send_message("INSERT_INPUT_HERE")
+        groq_questions = split_questions(groq_text)
+        groq_questions = [f"(Groq) {q}" for q in groq_questions if q]
+        combined_questions.extend(groq_questions)
 
-    # Extract questions from the response
-    questions = response.text.strip().split('\n')
+    except Exception as e:
+        print(f"Groq error: {e}")
+        if 'response' in locals():
+            print("Groq response text:", response.text)
 
-    return jsonify({"questions": questions})
+    # RANDOMIZE AND SELECT FINAL SET
+    random.shuffle(combined_questions)
+    final_questions = combined_questions[:num_questions] if num_questions <= len(combined_questions) else combined_questions
+
+    return jsonify({"questions": final_questions})
+
+
+
+
+
+# @app.route('/generate_questions', methods=['POST'])
+# def generate_questions():
+#     data = request.get_json()
+#     topic = data.get('topic')
+#     num_questions = int(data.get('num_questions', 5))
+#     difficulty = data.get('difficulty', 'medium')
+
+#     prompt = f"Generate {num_questions} {difficulty} questions on the topic: {topic}."
+
+#     combined_questions = []
+
+#     # ---- Gemini Response ----
+#         # chat_session = model.start_chat(history=[
+#         #     {
+#         #         "role": "user",
+#         #         "parts": [prompt]
+#         #     }
+#         # ])
+#         # gemini_response = chat_session.send_message(prompt)
+#     try:
+#         chat_session = model.start_chat()
+#         gemini_response = chat_session.send_message(prompt)
+#         gemini_questions = gemini_response.text.strip().split('\n')
+#         gemini_questions = [f"(Gemini) {q.strip()}" for q in gemini_questions if q.strip()]
+#         combined_questions.extend(gemini_questions)
+#     except Exception as e:
+#         print(f"Gemini error: {e}")
+
+#     # ---- OpenAI Response ----
+#     # from openai import OpenAI
+#     # try:
+#         # openai_response = openai.chat.completions.create(
+#         #     model="gpt-3.5-turbo",  # or "gpt-4"
+#         #     messages=[
+#         #         {"role": "user", "content": prompt}
+#         #     ],
+#         #     temperature=0.7,
+#         # )
+#         # openai_text = openai_response['choices'][0]['message']['content']
+#         # openai_questions = openai_text.strip().split('\n')
+#         # openai_questions = [f"(ChatGPT) {q.strip()}" for q in openai_questions if q.strip()]
+#     #     openai_questions = [
+#     #     f"(ChatGPT) {q.strip().lstrip('0123456789. ').strip()}"
+#     #     for q in openai_text.strip().split('\n')
+#     #     if q.strip()]
+
+#     #     combined_questions.extend(openai_questions)
+#     # except Exception as e:
+#     #     print(f"OpenAI error: {e}")
+
+#     # try:
+#     #     headers = {
+#     #         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+#     #         "Content-Type": "application/json"
+#     #     }
+
+#     #     payload = {
+#     #         "model": "deepseek-chat",  # Replace with actual model name if different
+#     #         "messages": [
+#     #             {"role": "user", "content": prompt}
+#     #         ],
+#     #         "temperature": 0.7
+#     #     }
+
+#     #     response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=payload)
+#     #     response.raise_for_status()
+#     #     deepseek_text = response.json()['choices'][0]['message']['content']
+
+#     #     deepseek_questions = [
+#     #         f"(DeepSeek) {q.strip().lstrip('0123456789. ').strip()}"
+#     #         for q in deepseek_text.strip().split('\n')
+#     #         if q.strip()
+#     #     ]
+#     #     combined_questions.extend(deepseek_questions)
+
+#     # except Exception as e:
+#     #     print(f"DeepSeek error: {e}")
+
+#     try:
+#         headers = {
+#             "Authorization": f"Bearer {GROQ_API_KEY}",
+#             "Content-Type": "application/json"
+#         }
+
+#         payload = {
+#             # "model": "mixtral-8x7b-32768",  # or "llama3-70b-8192", etc.
+#             "model":"llama3-8b-8192",
+#             "messages": [
+#                 {"role": "user", "content": prompt}
+#             ],
+#             "temperature": 0.7,
+#             "stream":False
+#         }
+
+#         print("Sending payload to Groq:",payload)
+#         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+#         response.raise_for_status()
+#         groq_text = response.json()['choices'][0]['message']['content']
+
+#         groq_questions = [
+#             # q.strip().lstrip("0123456789. ").strip()
+#             f"(Groq) {q.strip().lstrip('0123456789. ').strip()}"
+#             for q in groq_text.strip().split('\n')
+#             if q.strip()
+#         ]
+#         combined_questions.extend(groq_questions)
+
+#     except Exception as e:
+#         print(f"Groq error: {e}")
+#         print("Groq response text:", response.text if 'response' in locals() else "No response")
+
+    
+
+
+    # Optional: shuffle and limit to requested number
+    import random
+    random.shuffle(combined_questions)
+    combined_questions = combined_questions[:num_questions]
+
+    return jsonify({"questions": combined_questions})
+
+
+
+
+
+
+
+
+
 
 #  # Route to generate the PDF
 # @app.route('/generate_pdf', methods=['POST'])

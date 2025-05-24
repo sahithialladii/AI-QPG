@@ -1,14 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>User Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/dashboard.css') }}" />
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #0056b3;
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        nav a:hover {
+            background-color: #003d80;
+        }
+
+        main {
+            flex-grow: 1;
+            padding: 40px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        main h2 {
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 15px 35px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 12px rgba(0, 86, 179, 0.6);
+        }
+
+        @media (max-width: 480px) {
+            main {
+                padding: 20px 10px;
+            }
+
+            button {
+                width: 100%;
+                max-width: 300px;
+                padding: 15px 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to the Question Paper Generator</h1>
-    <button onclick="window.location.href='/previous_papers'">Previously Generated Question Papers</button>
-    <button onclick="window.location.href='/upload_marksheet'">Generate New Questions</button>
-    <nav>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
+    <header>
+        <h1>Welcome, {{ username }}!</h1>
+        <nav>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <main>
+        <h2>Your Dashboard</h2>
+        <div class="btn-container">
+            <button onclick="window.location.href='/previous_papers'">Previously Generated Assignments</button>
+            <button onclick="window.location.href='/upload_marksheet'">Generate New Questions</button>
+        </div>
+    </main>
 </body>
 </html>

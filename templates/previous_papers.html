@@ -2,9 +2,10 @@
 <html>
 <head>
     <title>Previous Question Papers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/previous_papers.css') }}">
 </head>
 <body>
-    <h2>Your Previously Generated Question Papers</h2>
+    <h2>Your Previously Generated Assignments</h2>
     <ul>
         {% for paper in papers %}
             <li><a href="{{ url_for('download_paper', paper_id=paper.id) }}">{{ paper.title }}</a></li>

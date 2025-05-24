@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+openai
+pandas
+scikit-learn
+numpy
+pdfkit
+jinja2
+sqlalchemy
+pymysql
+python-dotenv
+requests
