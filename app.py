@@ -174,7 +174,7 @@ def previous_papers():
 
     user_id = session['user_id']
     cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT id, title FROM question_papers WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+    cursor.execute("SELECT id, title ,created_at FROM question_papers WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
     papers = cursor.fetchall()
 
     return render_template('previous_papers.html', papers=papers)

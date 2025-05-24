@@ -1,37 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}" />
     <title>Question Generator</title>
-
 
     <style>
         .tables-container {
-    display: flex;
-    justify-content: space-around;
-    gap: 40px;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-}
+            display: flex;
+            justify-content: space-around;
+            gap: 40px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
 
-.table-section {
-    flex: 1;
-    min-width: 300px;
-}
+        .table-section {
+            flex: 1;
+            min-width: 300px;
+        }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
 
-th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-}
- /* New styling for Logout button */
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        /* Logout styling */
         nav.logout-container {
             position: fixed;
             top: 20px;
@@ -55,158 +55,218 @@ th, td {
             background-color: #0056b3;
         }
 
-    </style>
+        form {
+            margin-top: 15px;
+        }
 
+        form label, form input, form button {
+            display: block;
+            margin: 5px 0;
+        }
+
+        form input[type="text"], form input[type="number"] {
+            width: 90%;
+            padding: 6px;
+            font-size: 1rem;
+        }
+
+        form button {
+            cursor: pointer;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        form button:hover {
+            background-color: #0056b3;
+        }
+
+        h2 {
+            margin-top: 25px;
+        }
+        /* Improved Download PDF button styling */
+    button[id^="downloadPdf"] {
+        display: none;
+        margin-top: 15px;
+        background-color: #28a745;  /* Green color */
+        border: none;
+        color: white;
+        padding: 10px 18px;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 6px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    button[id^="downloadPdf"]:hover,
+    button[id^="downloadPdf"]:focus {
+        background-color: #218838;  /* Darker green on hover/focus */
+        box-shadow: 0 4px 8px rgba(33, 136, 56, 0.6);
+        outline: none;
+    }
+
+    </style>
 </head>
 <body>
     <nav class="logout-container">
         <a href="{{ url_for('logout') }}">Logout</a>
     </nav>
+
     <h1>Question Generator</h1>
 
-<div class="tables-container">
-    <div class="table-section">
-        <h3>Students Above or Equal to Threshold</h3>
-    <table>
-        <tr><th>Name</th><th>Marks</th></tr>
-        {% for student in group_A %}
-        <tr>
-            <td>{{ student.Name }}</td>
-            <td>{{ student.Marks }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <div class="tables-container">
+        <div class="table-section">
+            <h3>Students Above or Equal to Threshold</h3>
+            <table>
+                <tr><th>Name</th><th>Marks</th></tr>
+                {% for student in group_A %}
+                <tr>
+                    <td>{{ student.Name }}</td>
+                    <td>{{ student.Marks }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <!-- Form for Easy questions -->
+            <form id="easyQuestionForm">
+                <label for="topic_easy">Topic:</label>
+                <input type="text" id="topic_easy" required />
+
+                <label for="num_questions_easy">Number of Questions:</label>
+                <input type="number" id="num_questions_easy" value="5" required />
+
+                <!-- Hidden input for difficulty -->
+                <input type="hidden" id="difficulty_easy" value="Easy" />
+
+                <button type="submit">Generate Easy Questions</button>
+            </form>
+
+            <h2 id="generatedHeading_easy" style="display:none;">Generated Easy Questions:</h2>
+            <div id="questions_easy"></div>
+            <button id="downloadPdf_easy" style="display:none;">Download Easy Questions PDF</button>
+        </div>
+
+        <div class="table-section">
+            <h3>Students Below Threshold</h3>
+            <table>
+                <tr><th>Name</th><th>Marks</th></tr>
+                {% for student in group_B %}
+                <tr>
+                    <td>{{ student.Name }}</td>
+                    <td>{{ student.Marks }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <!-- Form for Hard questions -->
+            <form id="hardQuestionForm">
+                <label for="topic_hard">Topic:</label>
+                <input type="text" id="topic_hard" required />
+
+                <label for="num_questions_hard">Number of Questions:</label>
+                <input type="number" id="num_questions_hard" value="5" required />
+
+                <!-- Hidden input for difficulty -->
+                <input type="hidden" id="difficulty_hard" value="Hard" />
+
+                <button type="submit">Generate Hard Questions</button>
+            </form>
+
+            <h2 id="generatedHeading_hard" style="display:none;">Generated Hard Questions:</h2>
+            <div id="questions_hard"></div>
+            <button id="downloadPdf_hard" style="display:none;">Download Hard Questions PDF</button>
+        </div>
     </div>
 
-<div class="table-section">
-    <h3>Students Below Threshold</h3>
-    <table>
-        <tr><th>Name</th><th>Marks</th></tr>
-        {% for student in group_B %}
-        <tr>
-            <td>{{ student.Name }}</td>
-            <td>{{ student.Marks }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
-</div>
-
-
-    <!-- Form to input the topic and number of questions -->
-    <form id="questionForm">
-        <label for="topic">Topic:</label>
-        <input type="text" id="topic" required>
-
-        <label for="num_questions">Number of Questions:</label>
-        <input type="number" id="num_questions" value="5" required>
-
-        <label for="difficulty">Difficulty:</label>
-    <select id="difficulty" required>
-        <option value="" disabled selected>Select difficulty</option>
-        <option value="Easy">Easy</option>
-        <option value="Hard">Hard</option>
-    </select>
-
-        <button type="submit">Generate Questions</button>
-    </form>
-
-    <!-- Heading for the generated questions -->
-    <h2 id="generatedHeading" style="display: none;">Generated Questions:</h2>
-    <div id="questions"></div>
-
-    <!-- Button to download the questions as a PDF -->
-    <button id="downloadPdf" style="display: none;">Download PDF</button>
-
     <script>
-        // Handle the question generation form submission
-        document.getElementById('questionForm').addEventListener('submit', async function (e) {
-            e.preventDefault();  // Prevent the default form submission
-            
-            const topic = document.getElementById('topic').value;
-            const numQuestions = document.getElementById('num_questions').value;
-            const difficulty = document.getElementById('difficulty').value;
+        // Helper function to handle question generation for a form
+        async function handleQuestionFormSubmit(formId, topicId, numQuestionsId, difficultyId, questionsDivId, headingId, downloadBtnId) {
+            const form = document.getElementById(formId);
+            const questionsDiv = document.getElementById(questionsDivId);
+            const generatedHeading = document.getElementById(headingId);
+            const downloadBtn = document.getElementById(downloadBtnId);
 
-            // Send POST request to the Flask backend to generate questions
-            const response = await fetch('/generate_questions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ topic, num_questions: numQuestions,difficulty })  // Send data as JSON
-            });
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-            const data = await response.json();
-            const questionsDiv = document.getElementById('questions');
-            const generatedHeading = document.getElementById('generatedHeading');
-            
-            questionsDiv.innerHTML = '';  // Clear previous content
-            
-            if (data.questions) {
-                // Show the heading when questions are generated
-                generatedHeading.style.display = 'block';
+                const topic = document.getElementById(topicId).value;
+                const numQuestions = document.getElementById(numQuestionsId).value;
+                const difficulty = document.getElementById(difficultyId).value;
 
-                // Create a table for displaying questions
-                const table = document.createElement('table');
-                const headerRow = document.createElement('tr');
-
-                // Create headers for the table
-                const questionNumberHeader = document.createElement('th');
-                questionNumberHeader.textContent = 'No.';
-                const questionTextHeader = document.createElement('th');
-                questionTextHeader.textContent = 'Question';
-
-                headerRow.appendChild(questionNumberHeader);
-                headerRow.appendChild(questionTextHeader);
-                table.appendChild(headerRow);
-
-                // Add questions as rows
-                data.questions.forEach((question, index) => {
-                    const row = document.createElement('tr');
-
-                    const questionNumberCell = document.createElement('td');
-                    questionNumberCell.textContent = index + 1;
-
-                    const questionTextCell = document.createElement('td');
-                    questionTextCell.textContent = question;
-
-                    row.appendChild(questionNumberCell);
-                    row.appendChild(questionTextCell);
-                    table.appendChild(row);
+                // Send POST request to backend
+                const response = await fetch('/generate_questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ topic, num_questions: numQuestions, difficulty })
                 });
 
-                // Append the table to the questionsDiv
-                questionsDiv.appendChild(table);
+                const data = await response.json();
+                questionsDiv.innerHTML = '';
+                
+                if (data.questions) {
+                    generatedHeading.style.display = 'block';
 
-                // Show the download PDF button
-                const downloadBtn = document.getElementById('downloadPdf');
-                downloadBtn.style.display = 'block';
+                    // Create a table for questions
+                    const table = document.createElement('table');
+                    const headerRow = document.createElement('tr');
+                    const numberHeader = document.createElement('th');
+                    numberHeader.textContent = 'No.';
+                    const questionHeader = document.createElement('th');
+                    questionHeader.textContent = 'Question';
+                    headerRow.appendChild(numberHeader);
+                    headerRow.appendChild(questionHeader);
+                    table.appendChild(headerRow);
 
-                // Handle the PDF generation and download
-                downloadBtn.onclick = async function () {
-                    const pdfResponse = await fetch('/generate_pdf', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ topic, questions: data.questions })
+                    data.questions.forEach((question, index) => {
+                        const row = document.createElement('tr');
+                        const numCell = document.createElement('td');
+                        numCell.textContent = index + 1;
+                        const questionCell = document.createElement('td');
+                        questionCell.textContent = question;
+                        row.appendChild(numCell);
+                        row.appendChild(questionCell);
+                        table.appendChild(row);
                     });
-                    const blob = await pdfResponse.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `${topic}_questions.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                };
-            } else {
-                // If no questions are returned, hide the heading
-                generatedHeading.style.display = 'none';
-                questionsDiv.textContent = data.error || 'An error occurred';
-            }
-        });
+
+                    questionsDiv.appendChild(table);
+
+                    // Show download button
+                    downloadBtn.style.display = 'inline-block';
+
+                    downloadBtn.onclick = async () => {
+                        const pdfResponse = await fetch('/generate_pdf', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ topic, questions: data.questions })
+                        });
+                        const blob = await pdfResponse.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = `${topic}_${difficulty}_questions.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                    };
+                } else {
+                    generatedHeading.style.display = 'none';
+                    questionsDiv.textContent = data.error || 'An error occurred';
+                    downloadBtn.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize form handlers for both forms
+        handleQuestionFormSubmit('easyQuestionForm', 'topic_easy', 'num_questions_easy', 'difficulty_easy', 'questions_easy', 'generatedHeading_easy', 'downloadPdf_easy');
+        handleQuestionFormSubmit('hardQuestionForm', 'topic_hard', 'num_questions_hard', 'difficulty_hard', 'questions_hard', 'generatedHeading_hard', 'downloadPdf_hard');
     </script>
 </body>
 </html>

@@ -8,7 +8,10 @@
     <h2>Your Previously Generated Assignments</h2>
     <ul>
         {% for paper in papers %}
-            <li><a href="{{ url_for('download_paper', paper_id=paper.id) }}">{{ paper.title }}</a></li>
+            <li>
+                {{ paper.title }} - Created on {{ paper.created_at.strftime('%Y-%m-%d %H:%M') if paper.created_at else 'Unknown Date' }}
+                <a href="{{ url_for('download_paper', paper_id=paper.id) }}">Download</a>
+            </li>
         {% endfor %}
     </ul>
     <nav>
