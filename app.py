@@ -341,35 +341,69 @@ def index():
 
 import re
 
+# def split_questions(text):
+#     """
+#     Splits a multi-line text into separate questions based on numbering pattern.
+#     Keeps multi-line questions grouped properly.
+#     Example question starts: '1. ...' or '2. ...'
+#     """
+#     questions = []
+#     current_question_lines = []
+
+#     # Regex pattern to detect question start line (e.g., '1. ', '2. ', etc.)
+#     question_start_pattern = re.compile(r'^\s*\d+\.\s+')
+
+#     lines = text.split('\n')
+#     for line in lines:
+#         if question_start_pattern.match(line):
+#             # If we already collected lines for a question, save it first
+#             if current_question_lines:
+#                 questions.append(' '.join(current_question_lines).strip())
+#             current_question_lines = [line.strip()]
+#         else:
+#             # If not a new question start, append line to current question (multi-line question)
+#             if line.strip():  # ignore empty lines
+#                 current_question_lines.append(line.strip())
+
+#     # Add the last question collected
+#     if current_question_lines:
+#         questions.append(' '.join(current_question_lines).strip())
+
+#     return questions
+
+
+
 def split_questions(text):
     """
-    Splits a multi-line text into separate questions based on numbering pattern.
-    Keeps multi-line questions grouped properly.
-    Example question starts: '1. ...' or '2. ...'
+    Splits a multi-line text into separate questions.
+    Supports formats like:
+    1. What is...
+    - What is...
+    * What is...
     """
+    import re
+
+    # Split based on common question-start formats
+    pattern = re.compile(r'(?:^|\n)(\s*(?:\d+\.\s+|\-\s+|\*\s+))')
+    splits = pattern.split(text)
+
     questions = []
-    current_question_lines = []
+    current = ""
 
-    # Regex pattern to detect question start line (e.g., '1. ', '2. ', etc.)
-    question_start_pattern = re.compile(r'^\s*\d+\.\s+')
+    for i in range(1, len(splits), 2):
+        marker = splits[i]
+        content = splits[i + 1] if i + 1 < len(splits) else ""
+        if current:
+            questions.append(current.strip())
+        current = marker + content
 
-    lines = text.split('\n')
-    for line in lines:
-        if question_start_pattern.match(line):
-            # If we already collected lines for a question, save it first
-            if current_question_lines:
-                questions.append(' '.join(current_question_lines).strip())
-            current_question_lines = [line.strip()]
-        else:
-            # If not a new question start, append line to current question (multi-line question)
-            if line.strip():  # ignore empty lines
-                current_question_lines.append(line.strip())
-
-    # Add the last question collected
-    if current_question_lines:
-        questions.append(' '.join(current_question_lines).strip())
+    if current:
+        questions.append(current.strip())
 
     return questions
+
+
+
 
 @app.route('/generate_questions', methods=['POST'])
 def generate_questions():
@@ -379,7 +413,12 @@ def generate_questions():
     num_questions = int(data.get('num_questions', 5))
     difficulty = data.get('difficulty', 'medium')
 
-    prompt = f"Generate {num_questions} {difficulty} questions on the topic: {topic}."
+
+    if difficulty.lower() == 'easy':
+        prompt = f"Generate {num_questions} easy-level descriptive questions (not multiple choice) on the topic: {topic}. Each question should test basic understanding using short explanations or concept-based answers."
+    else:
+        prompt = f"Generate {num_questions} {difficulty} descriptive questions on the topic: {topic}."
+    # prompt = f"Generate {num_questions} {difficulty} questions on the topic: {topic}."
 
     combined_questions = []
 
