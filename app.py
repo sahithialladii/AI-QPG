@@ -14,6 +14,7 @@ import requests
 
 
 # Load environment variables from .env file
+from dotenv import load_dotenv
 load_dotenv()
 GROQ_API_KEY = os.environ["GROQ_API_KEY"]
 
@@ -427,7 +428,7 @@ def generate_questions():
         chat_session = model.start_chat()
         gemini_response = chat_session.send_message(prompt)
         gemini_questions = split_questions(gemini_response.text)
-        gemini_questions = [f"(Gemini) {q}" for q in gemini_questions if q]
+        gemini_questions = [f" {q}" for q in gemini_questions if q]
         combined_questions.extend(gemini_questions)
     except Exception as e:
         print(f"Gemini error: {e}")
@@ -448,11 +449,21 @@ def generate_questions():
         }
         response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
         response.raise_for_status()
-        groq_text = response.json()['choices'][0]['message']['content']
+        # groq_text = response.json()['choices'][0]['message']['content']
 
-        groq_questions = split_questions(groq_text)
-        groq_questions = [f"(Groq) {q}" for q in groq_questions if q]
-        combined_questions.extend(groq_questions)
+        # groq_questions = split_questions(groq_text)
+        # groq_questions = [f"(Groq) {q}" for q in groq_questions if q]
+        # combined_questions.extend(groq_questions)
+        json_response = response.json()
+    
+    # Add this safety check
+        if 'choices' in json_response and json_response['choices']:
+            groq_text = json_response['choices'][0]['message']['content']
+            groq_questions = split_questions(groq_text)
+            groq_questions = [f" {q}" for q in groq_questions if q]
+            combined_questions.extend(groq_questions)
+        else:
+            print("Groq response missing 'choices':", json_response)
 
     except Exception as e:
         print(f"Groq error: {e}")
